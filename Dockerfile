@@ -21,7 +21,7 @@ RUN apk add --no-cache curl tar ca-certificates
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz \
   -o migrate.tar.gz && \
   tar -xzf migrate.tar.gz && \
-  mv migrate.linux-amd64 /usr/bin/migrate && \
+  mv migrate /usr/bin/migrate && \
   chmod +x /usr/bin/migrate && \
   rm migrate.tar.gz
 
