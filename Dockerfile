@@ -36,4 +36,4 @@ COPY --from=builder /app/migrations /app/migrations
 EXPOSE 8080
 
 # Run migration and start the app
-CMD migrate -path ./migrations -database "$DATABASE_URL" up && ./main
+CMD migrate -path ./migrations -database "$DATABASE_URL" up && ./app
