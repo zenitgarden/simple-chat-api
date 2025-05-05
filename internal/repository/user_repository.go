@@ -39,7 +39,7 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 
 	// Check if the email already exists
 	var existingUser entity.User
-	if err := tx.Where("email = ?", user.Email).First(&existingUser).Error; err == nil {
+	if err := tx.Where("email = ?", user.Email).First(&existingUser).Error; err != nil {
 		// Return custom error when email already exists
 		tx.Rollback()
 		return errors.New("email")
