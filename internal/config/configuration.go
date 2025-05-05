@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -11,9 +10,8 @@ import (
 )
 
 func LoadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("No .env file found, assuming production environment")
 	}
 }
 
