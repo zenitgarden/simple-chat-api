@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -29,5 +30,10 @@ func main() {
 
 	logger.StartConnectionLogger()
 
-	log.Fatal(app.Listen(":3000"))
+	port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
 }
