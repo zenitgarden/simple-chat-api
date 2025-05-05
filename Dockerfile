@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-# Build the Go binary
+# Build the Go binary with the correct name
 RUN go build -o main ./cmd
 
 # Stage 2: Runtime
@@ -28,12 +28,12 @@ RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/
 # Set working directory
 WORKDIR /app
 
-# Copy compiled binary and migrations
+# Copy the compiled binary and migrations
 COPY --from=builder /app/main /app/
 COPY --from=builder /app/migrations /app/migrations
 
 # Expose application port
 EXPOSE 8080
 
-# Run migration and start the app
-CMD migrate -path ./migrations -database "$DATABASE_URL" up && ./app
+# Run migration and start the app using the correct binary name 'main'
+CMD migrate -path ./migrations -database "$DATABASE_URL" up && ./main
