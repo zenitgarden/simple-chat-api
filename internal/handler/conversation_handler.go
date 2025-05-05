@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -184,7 +183,6 @@ func (h *ConversationHandler) FindAllConversations(c *fiber.Ctx) error {
 			Data:       nil,
 		})
 	}
-	fmt.Println(conversations[0])
 
 	var result []dto.AllConversationResponse = []dto.AllConversationResponse{}
 	for _, conversation := range conversations {
