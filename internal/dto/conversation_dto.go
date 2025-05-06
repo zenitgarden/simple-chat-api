@@ -34,11 +34,12 @@ type ConversationResponse struct {
 }
 
 type AllConversationResponse struct {
-	ID          uuid.UUID `json:"id"`
-	Title       string    `json:"title"`
-	IsGroup     bool      `json:"isGroup"`
-	LastMessage string    `json:"lastMessage"`
+	ID          uuid.UUID  `json:"id"`
+	Title       string     `json:"title"`
+	IsGroup     bool       `json:"isGroup"`
+	LastMessage string     `json:"lastMessage"`
 	SentAt      *time.Time `json:"sentAt"`
+	CreatedBy   uuid.UUID  `json:"createdBy"`
 }
 
 type LtMessageResponse struct {

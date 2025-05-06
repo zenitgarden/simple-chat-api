@@ -26,9 +26,10 @@ func NewConversationService(conversationRepo repository.ConversationRepository, 
 func (s *ConversationService) CreateConversation(ctx context.Context, req *dto.CreateConversationRequest, userID uuid.UUID) (*entity.Conversation, error) {
 
 	conversation := &entity.Conversation{
-		ID:      uuid.New(),
-		Title:   req.Title,
-		IsGroup: req.IsGroup,
+		ID:        uuid.New(),
+		Title:     req.Title,
+		IsGroup:   req.IsGroup,
+		CreatedBy: userID,
 	}
 
 	tx := s.conversationRepo.BeginTrx(ctx)

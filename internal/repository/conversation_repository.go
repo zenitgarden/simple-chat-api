@@ -98,9 +98,10 @@ func (r *conversationRepository) FindAll(ctx context.Context, filter dto.Convers
 	var total int64
 
 	err := r.db.Raw(`
-	SELECT COUNT(*)
-	FROM conversations c
-	JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?;`, userId).Scan(&total).Error
+	SELECT COUNT(DISTINCT c.id) AS total
+		FROM conversations c
+		LEFT JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?
+	WHERE p.user_id IS NOT NULL OR c.created_by = ?`, userId, userId).Scan(&total).Error
 
 	if err != nil {
 		return nil, 0, err
@@ -111,22 +112,25 @@ func (r *conversationRepository) FindAll(ctx context.Context, filter dto.Convers
 			c.id AS conversation_id,
 			c.title AS title,
 			c.is_group AS is_group,
-			m.content AS last_message,
-			m.sent_at AS sent_at
+			m.content AS latest_message,
+			m.sent_at AS message_sent_at,
+			c.created_by
 		FROM conversations c
-		-- Only include conversations where user is a participant
-		JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?
-		-- Get the latest message per conversation
-		JOIN LATERAL (
+		LEFT JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?
+		-- LEFT JOIN LATERAL to include conversations with no messages
+		LEFT JOIN LATERAL (
 			SELECT content, sent_at
 			FROM messages
 			WHERE conversation_id = c.id
 			ORDER BY sent_at DESC
 			LIMIT 1
 		) m ON true
-		ORDER BY m.sent_at DESC
-		LIMIT ? OFFSET ?;
-	`, userId, filter.Limit, filter.Offset).Scan(&results).Error
+		-- Only include conversations where user is a participant or the creator
+		WHERE p.user_id IS NOT NULL OR c.created_by = ?
+
+		ORDER BY m.sent_at DESC NULLS LAST
+		LIMIT ? OFFSET ?
+	`, userId, userId, filter.Limit, filter.Offset).Scan(&results).Error
 
 	if err != nil {
 		return nil, 0, err

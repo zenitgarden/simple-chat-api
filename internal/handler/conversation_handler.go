@@ -95,6 +95,10 @@ func (h *ConversationHandler) FindConversationByID(c *fiber.Ctx) error {
 
 	var participants []dto.ParticipantResponse
 	for _, participant := range conversation.Participants {
+		if !conversation.IsGroup && participant.User.ID != userID {
+			conversation.Title = participant.User.Name
+		}
+
 		participants = append(participants, dto.ParticipantResponse{
 			ID:       participant.User.ID,
 			Name:     participant.User.Name,
@@ -207,6 +211,7 @@ func (h *ConversationHandler) FindAllConversations(c *fiber.Ctx) error {
 			IsGroup:     conversation.IsGroup,
 			LastMessage: conversation.LatestMessage,
 			SentAt:      sentAt,
+			CreatedBy:   conversation.CreatedBy,
 		})
 	}
 
