@@ -49,17 +49,21 @@ type LtMessageResponse struct {
 	SenderName string    `json:"sender_name"`
 }
 
-// dto/participant_response.go
 type LtParticipantResponse struct {
 	UserID   uuid.UUID `json:"user_id"`
 	UserName string    `json:"user_name"`
 }
 
-// dto/conversation_detail.go
 type ConversationDetail struct {
 	ConversationID uuid.UUID               `json:"conversation_id"`
 	Title          string                  `json:"title"`
 	IsGroup        bool                    `json:"is_group"`
 	Messages       []LtMessageResponse     `json:"messages"`
 	Participants   []LtParticipantResponse `json:"participants"`
+}
+
+type GroupConversation struct {
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	TotalPeople int       `json:"total_people"`
 }

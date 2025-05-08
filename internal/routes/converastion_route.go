@@ -13,7 +13,8 @@ func ConversationRoutes(app fiber.Router, conversationHandler *handler.Conversat
 	conv.Post("/", conversationHandler.CreateConversation)
 	conv.Patch("/:id", conversationHandler.UpdateConversation)
 	conv.Get("/latest", conversationHandler.GetLatestConversation)
+	conv.Get("/groups", conversationHandler.GetGroupConversations)
 	conv.Get("/:id", conversationHandler.FindConversationByID)
-	conv.Get("/", conversationHandler.FindAllConversations)
 	conv.Get("/:id/messages", conversationHandler.GetMessagesByConversationID)
+	conv.Get("/", conversationHandler.FindAllConversations)
 }

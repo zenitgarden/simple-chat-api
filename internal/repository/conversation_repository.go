@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/zenitgarden/simple-chat-api/internal/dto"
@@ -19,6 +21,7 @@ type ConversationRepository interface {
 	Update(ctx context.Context, conversation *entity.Conversation, trx *gorm.DB) error
 	FindAll(ctx context.Context, filter dto.ConversationFilter, userId uuid.UUID) ([]*entity.ConversationSummary, int64, error)
 	GetLatestConversation(ctx context.Context, userId uuid.UUID) (*dto.ConversationDetail, error)
+	FindGroupConversation(ctx context.Context, filter dto.ConversationFilter, userId uuid.UUID) ([]dto.GroupConversation, int64, error)
 	BeginTrx(ctx context.Context) *gorm.DB
 }
 
@@ -293,6 +296,62 @@ func (r *conversationRepository) CheckConversation(ctx context.Context, user1, u
 	}
 
 	return 1, nil
+}
+
+func (r *conversationRepository) FindGroupConversation(ctx context.Context, filter dto.ConversationFilter, userId uuid.UUID) ([]dto.GroupConversation, int64, error) {
+	results := []dto.GroupConversation{}
+	var total int64
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, 2)
+
+	listQuery := r.db.
+		Table("conversations AS c").
+		Select("c.id, c.title, COUNT(cp.user_id) AS total_people").
+		Joins("LEFT JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?", userId).
+		Joins("JOIN participants cp ON cp.conversation_id = c.id").
+		Where("c.is_group = ?", true).
+		Where("p.user_id IS NULL"). // user hasn't joined
+		Group("c.id, c.title").
+		Limit(filter.Limit).
+		Offset(filter.Offset)
+
+	countQuery := r.db.
+		Table("conversations AS c").
+		Select("COUNT(*)").
+		Joins("LEFT JOIN participants p ON p.conversation_id = c.id AND p.user_id = ?", userId).
+		Where("c.is_group = ?", true).
+		Where("p.user_id IS NULL")
+
+	if filter.Title != "" {
+		listQuery = listQuery.Where("c.title ILIKE ?", "%"+filter.Title+"%")
+		countQuery = countQuery.Where("c.title ILIKE ?", "%"+filter.Title+"%")
+	}
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if err := listQuery.WithContext(ctx).Scan(&results).Error; err != nil {
+			errChan <- fmt.Errorf("failed to fetch conversations: %w", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := countQuery.WithContext(ctx).Scan(&total).Error; err != nil {
+			errChan <- fmt.Errorf("failed to fetch count: %w", err)
+		}
+	}()
+
+	wg.Wait()
+	close(errChan)
+
+	if len(errChan) > 0 {
+		err := <-errChan
+		return nil, 0, err
+	}
+
+	return results, total, nil
 }
 
 func (r *conversationRepository) BeginTrx(ctx context.Context) *gorm.DB {

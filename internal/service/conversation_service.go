@@ -133,6 +133,7 @@ func (s *ConversationService) FindConversationByID(ctx context.Context, id, user
 func (s *ConversationService) FindByID(ctx context.Context, id, userId uuid.UUID) (*entity.Conversation, error) {
 	return s.conversationRepo.CheckParticipant(ctx, id, userId, nil)
 }
+
 func (s *ConversationService) UpdateConversation(ctx context.Context, id, userId uuid.UUID, req *dto.UpdateConversationRequest) (*entity.Conversation, error) {
 	tx := s.conversationRepo.BeginTrx(ctx)
 	if tx.Error != nil {
@@ -180,10 +181,15 @@ func (s *ConversationService) UpdateConversation(ctx context.Context, id, userId
 
 	return conversation, tx.Commit().Error
 }
+
 func (s *ConversationService) FindAllConversations(ctx context.Context, filter dto.ConversationFilter, userId uuid.UUID) ([]*entity.ConversationSummary, int64, error) {
 	return s.conversationRepo.FindAll(ctx, filter, userId)
 }
 
 func (s *ConversationService) GetLatestConversation(ctx context.Context, userId uuid.UUID) (*dto.ConversationDetail, error) {
 	return s.conversationRepo.GetLatestConversation(ctx, userId)
+}
+
+func (s *ConversationService) FindGroupConversation(ctx context.Context, filter dto.ConversationFilter, userId uuid.UUID) ([]dto.GroupConversation, int64, error) {
+	return s.conversationRepo.FindGroupConversation(ctx, filter, userId)
 }

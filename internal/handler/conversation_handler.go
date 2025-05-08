@@ -331,3 +331,44 @@ func (h *ConversationHandler) GetLatestConversation(c *fiber.Ctx) error {
 		Data:       conversation,
 	})
 }
+
+func (h *ConversationHandler) GetGroupConversations(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(string)
+
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.Res{
+			StatusCode: fiber.StatusUnauthorized,
+			Message:    "Invalid or expired token",
+			Data:       nil,
+		})
+	}
+
+	pagination := utils.GetPagination(c)
+	filter := dto.ConversationFilter{
+		Limit:  pagination.Limit,
+		Offset: pagination.Offset,
+		Title:  c.Query("title"),
+	}
+
+	conversations, total, err := h.conversationService.FindGroupConversation(c.Context(), filter, id)
+	if err != nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(utils.Res{
+			StatusCode: fiber.StatusServiceUnavailable,
+			Message:    "Service unavailable",
+			Data:       nil,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(utils.Res{
+		StatusCode: fiber.StatusOK,
+		Message:    "Success",
+		Data:       conversations,
+		TotalData:  total,
+		Pagination: &utils.Pagination{
+			Page:  pagination.Page,
+			Limit: pagination.Limit,
+		},
+	})
+
+}
