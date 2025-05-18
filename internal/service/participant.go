@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/zenitgarden/simple-chat-api/internal/entity"
 	"github.com/zenitgarden/simple-chat-api/internal/repository"
 	"github.com/zenitgarden/simple-chat-api/pkg/exception"
+	"gorm.io/gorm"
 )
 
 type ParticipantService struct {
@@ -22,11 +24,11 @@ func NewParticipantService(participantRepository repository.ParticipantRepositor
 	}
 }
 
-func (s *ParticipantService) CreateParticipant(ctx context.Context, conversationID, userID uuid.UUID) (*entity.Participant, error) {
+func (s *ParticipantService) CreateParticipant(ctx context.Context, conversationID, userID uuid.UUID) (*entity.Conversation, *entity.Participant, error) {
 	tx := s.participantRepository.BeginTrx(ctx)
 	if tx.Error != nil {
 		tx.Rollback()
-		return nil, &exception.HTTPError{
+		return nil, nil, &exception.HTTPError{
 			StatusCode: fiber.StatusInternalServerError,
 			Message:    "Failed to create participant",
 			Data:       nil,
@@ -47,7 +49,7 @@ func (s *ParticipantService) CreateParticipant(ctx context.Context, conversation
 	conversation, err := s.conversationRepository.FindByID(ctx, conversationID, tx)
 	if conversation == nil {
 		tx.Rollback()
-		return nil, &exception.HTTPError{
+		return nil, nil, &exception.HTTPError{
 			StatusCode: fiber.StatusNotFound,
 			Message:    "Conversation not found",
 			Data:       nil,
@@ -56,7 +58,26 @@ func (s *ParticipantService) CreateParticipant(ctx context.Context, conversation
 
 	if err != nil {
 		tx.Rollback()
-		return nil, &exception.HTTPError{
+		return nil, nil, &exception.HTTPError{
+			StatusCode: fiber.StatusInternalServerError,
+			Message:    "Failed to create participant",
+			Data:       nil,
+		}
+	}
+
+	alreadyParticipated, err := s.participantRepository.FindById(ctx, conversationID, userID, tx)
+	if alreadyParticipated != nil {
+		tx.Rollback()
+		return nil, nil, &exception.HTTPError{
+			StatusCode: fiber.StatusConflict,
+			Message:    "Already participated in conversation",
+			Data:       nil,
+		}
+	}
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		tx.Rollback()
+		return nil, nil, &exception.HTTPError{
 			StatusCode: fiber.StatusServiceUnavailable,
 			Message:    "Failed to create participant",
 			Data:       nil,
@@ -66,13 +87,13 @@ func (s *ParticipantService) CreateParticipant(ctx context.Context, conversation
 	err = s.participantRepository.Create(ctx, participant, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, &exception.HTTPError{
+		return nil, nil, &exception.HTTPError{
 			StatusCode: fiber.StatusInternalServerError,
 			Message:    "Failed to create participant",
 			Data:       nil,
 		}
 	}
-	return participant, tx.Commit().Error
+	return conversation, participant, tx.Commit().Error
 }
 
 func (s *ParticipantService) DeleteParticipant(ctx context.Context, id uuid.UUID) error {

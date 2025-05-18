@@ -20,6 +20,7 @@ type ParticipantResponse struct {
 
 type ParticipantRawResponse struct {
 	ConversationID uuid.UUID `json:"conversationId"`
+	Title          string    `json:"title"`
 	UserID         uuid.UUID `json:"userId"`
 	JoinedAt       time.Time `json:"joinedAt"`
 }

@@ -25,7 +25,7 @@ func (h *ParticipantHandler) CreateParticipant(c *fiber.Ctx) error {
 		return exception.JSON(c, err)
 	}
 
-	participant, err := h.participantService.CreateParticipant(c.Context(), req.ConversationID, req.UserID)
+	conversation, participant, err := h.participantService.CreateParticipant(c.Context(), req.ConversationID, req.UserID)
 
 	if err != nil {
 		return exception.JSON(c, err)
@@ -36,6 +36,7 @@ func (h *ParticipantHandler) CreateParticipant(c *fiber.Ctx) error {
 		Message:    "Participant created successfully",
 		Data: dto.ParticipantRawResponse{
 			ConversationID: participant.ConversationID,
+			Title:          conversation.Title,
 			UserID:         participant.UserID,
 			JoinedAt:       participant.JoinedAt,
 		},
